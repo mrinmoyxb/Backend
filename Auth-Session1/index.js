@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import validator from "validator";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
+import cookieParser from "cookie-parser";
 dotenv.config();
 
 const app = express();
@@ -20,38 +21,33 @@ mongoose.connect(process.env.MONGODB_URI)
         console.log("not connected to mongoDB");
     })
 
-//! SESSION STORAGE OF SERVER
-let sessions = {}
-
-function generateSessionId(){
-    return crypto.randomBytes(64).toString("hex");
-}
-
 //! MIDDLEWARES
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
+app.use(cookieParser());
 
+//! SESSION STORAGE OF SERVER
+let sessions = {}
 function authenticateSession(req, res, next){
-    const cookies = req.headers.cookie;
-    if(!cookies){
+    const authSessionId = req.cookies.authSessionId;
+    if(!authSessionId){
         return res.json({msg: "login in to your account"});
     }
 
-    const cookie = Object.fromEntries(
-        cookies.split("; ").map(c=>c.split("="))
-    );
-
-    if(sessions[cookieData.authSessionId]){
-        console.log("Session Id from cookie: ", sessions[cookie.sessionId]);
+    if(sessions[authSessionId]){
+        console.log("Session info fetched from cookie: ", sessions[authSessionId]);
     }else{
         console.log("This session id is invalid");
     }
 
-    const sessionId = cookie.sessionId;
-    if(sessionId && sessions[sessionId]){
-        req.sessionId = sessions[sessionId];
+    if(authSessionId && sessions[authSessionId]){
+        req.session = sessions[authSessionId];
     }
+    next();
+}
 
+function generateSessionId(){
+    return crypto.randomBytes(64).toString("hex");
 }
 
 //! SIGNUP
@@ -97,6 +93,7 @@ app.post("/signup", async (req, res)=>{
     }
 })
 
+//! LOGIN
 app.post("/login", async (req, res)=>{
     let {email: userEmail, password: userPassword} = req.body;
 
@@ -107,7 +104,7 @@ app.post("/login", async (req, res)=>{
     if(!validator.isEmail(userEmail)){
         return res.status(400).json({msg: "invalid email"});
     }
-    const existingUser = await userModel.findOne({emai: userEmail});
+    const existingUser = await userModel.findOne({email: userEmail});
     if(!existingUser){
         return res.status(400).json({msg: "please login with a registered mail"});
     }
@@ -128,13 +125,34 @@ app.post("/login", async (req, res)=>{
         httpOnly: true,
         secure: true,
         sameSite: "strict",
-        maxAge: 120 * 1000
+        maxAge: 60 * 1000
     })
 
     return res.status(200).redirect("/test");
 })
 
-app.get("/test", (req, res)=>{
+//! LOGOUT
+app.post("/logout", (req, res)=>{
+    const sessionId = req.cookies.authSessionId;
+    if(!sessionId){
+        return res.status(400).json({msg: "No active session"});
+    }
+
+    delete sessions[sessionId];
+
+    res.clearCookie("authSessionId", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "strict"
+    });
+
+    return res.status(200).json({msg: "Logged out successfully"});
+})
+
+//! TEST 
+app.get("/test", authenticateSession, async(req, res)=>{
+    let userId = req.session.userId;
+    const user = await userModel.findById(userId);
     res.status(200).json({msg: "hello!!! from server"});
 })
 
