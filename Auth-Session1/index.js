@@ -8,7 +8,6 @@ import validator from "validator";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import cookieParser from "cookie-parser";
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT;
