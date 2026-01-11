@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { createHmac, randomBytes } from "crypto";
+import createTokenForUser from "../services/authenticate.js";
 
 const userSchema = new mongoose.Schema({
     fullName: {
@@ -18,7 +19,7 @@ const userSchema = new mongoose.Schema({
     salt: {
         type: String
     },
-    profileImg: {
+    profileImgURL: {
         type: String,
         default: "/images/profile.png"
     },
@@ -42,7 +43,7 @@ userSchema.pre("save", async function() {
     this.password = hashedPassword;
 });
 
-userSchema.static("matchPassword", async function(email, password){
+userSchema.static("matchPasswordAndGenerateToken", async function(email, password){
     const user = await this.findOne({email});
     if(!user) throw new Error("User not found");
 
@@ -52,7 +53,8 @@ userSchema.static("matchPassword", async function(email, password){
         .update(password)
         .digest("hex");
     if(hashedPassword === userProvidedPassword){
-        return {...user, password: undefined, salt: undefined};
+        const token = createTokenForUser(user);
+        return token;
     }else{
         throw new Error("Wrong password");
     }
