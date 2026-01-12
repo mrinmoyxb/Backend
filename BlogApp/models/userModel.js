@@ -56,7 +56,7 @@ userSchema.static("matchPasswordAndGenerateToken", async function(email, passwor
         const token = createTokenForUser(user);
         return token;
     }else{
-        throw new Error("Wrong password");
+        throw Error("Wrong password");
     }
 })
 

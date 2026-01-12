@@ -3,10 +3,12 @@ dotenv.config();
 
 import express from "express";
 import path from "path";
-import userRoutes from "./routes/userRoute.js";
 import mongoose, { mongo } from "mongoose";
 import cookieParser from "cookie-parser";
 import checkForAuthenticationCookie from "./middlewares/authentication.js";
+
+import userRoutes from "./routes/userRoute.js";
+import blogRoutes from "./routes/blogRoute.js";
 
 mongoose.connect(process.env.MONGODB_URI)
     .then(()=>{
@@ -25,17 +27,20 @@ app.use(express.json());
 app.use(express.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(checkForAuthenticationCookie("token"));
+app.use(express.static(path.resolve("./public")));
 
-app.get("/", (req, res)=>{
+import blog from "./models/blogModel.js"
+
+app.get("/", async (req, res)=>{
+    const allBlogs = await blog.find({}).sort('createdAt', -1);
     res.render("home.ejs", {
-        user:req.user
+        user:req.user,
+        blogs: allBlogs
     });
 })
 
-
-
-
 app.use("/user", userRoutes);
+app.use("/blog", blogRoutes);
 
 app.listen(PORT, ()=>{
     console.log("SERVER IS RUNNING ON PORT: ", PORT);
