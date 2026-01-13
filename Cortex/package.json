@@ -1,0 +1,16 @@
+{
+  "name": "cortex",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "cortex": "./bin/main.js"
+  },
+  "author": "mrinmoy",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "chalk": "^5.6.2",
+    "systeminformation": "^5.30.3"
+  }
+}

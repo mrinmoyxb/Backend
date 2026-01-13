@@ -32,3 +32,5 @@ cli-core/
 └── utils/
     ├── parseArgs.js         # reads process.argv
     └── validateUrl.js
+
+A script intended for direct execution on Unix-like operating systems must start with a "shebang" line (#!) as the absolute first line of the file, with no leading characters or blank space. This directive tells the operating system which interpreter should be used to run the script. 
