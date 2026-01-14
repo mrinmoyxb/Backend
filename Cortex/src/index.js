@@ -1,6 +1,7 @@
 import {parseArgs} from "node:util";
 import getSpecs from "./hardware.js";
 import theme from "./ui.js";
+import cliBanner from "../ui/banner.js";
 
 const config = {
     options: {
@@ -64,4 +65,5 @@ async function main(){
     }
 }
 
+cliBanner();
 main();
