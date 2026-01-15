@@ -65,5 +65,7 @@ async function main(){
     }
 }
 
-cliBanner();
-main();
+cliBanner()
+    // .then(()=>{
+    //     main();
+    // })
