@@ -1,4 +1,5 @@
 import si from "systeminformation";
+import os from "node:os";
 
 export async function getCPUInfo(){
     const cpu = await si.cpu();
@@ -7,8 +8,10 @@ export async function getCPUInfo(){
     return {
         vendor: cpu.vendor,
         brand: cpu.brand,
-        model: cpu.model,
+        model: os.cpus()[0].model,
         manufacturer: cpu.manufacturer,
+        architecture: os.arch(),
+        os: os.platform(),
         governor: cpu.governor,
         processors: cpu.processors,
         cores: cpu.cores,
@@ -24,4 +27,4 @@ export async function getCPUInfo(){
     };
 }
 
-getCPUInfo();
+console.log(os.release());

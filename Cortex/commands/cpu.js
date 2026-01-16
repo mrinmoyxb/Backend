@@ -1,19 +1,21 @@
 import chalk from "chalk";
 import { getCPUInfo } from "../services/cpuservice.js";
-import { setRow, setValueOrNA } from "../utils/displayUtil.js";
+import { setRow, setValueOrNA} from "../utils/displayUtil.js";
 
-const LABEL_WIDTH = 22
+const LABEL_WIDTH = 22;
 
 export default async function cpuCommand(){
     const cpu = await getCPUInfo();
 
-    console.log(chalk.bold.cyan("CPU Information"));
+    console.log(chalk.bold.bgBlue.white("\n CPU Information "));
     console.log(chalk.dim("-".repeat(40)));
 
     console.log(setRow("Vendor", cpu.vendor));
     console.log(setRow("Brand", cpu.vendor));
     console.log(setRow("Model", cpu.model));
     console.log(setRow("Manufacturer", cpu.manufacturer));
+    console.log(setRow("Architecture", cpu.architecture));
+    console.log(setRow("Operating System", cpu.os));
     console.log(setRow("Governor", cpu.governor));
     console.log(setRow("Processors", cpu.processors));
     console.log(setRow("Cores", cpu.cores));
@@ -26,7 +28,7 @@ export default async function cpuCommand(){
     console.log(setRow("Load", cpu.load ? `${cpu.load} %` : null));
 
     console.log();
-    console.log(chalk.bold.cyan("Cache"));
+    console.log(chalk.bold.bgBlue.white(" Cache "));
     console.log(chalk.dim("-".repeat(40)));
 
     if(cpu.cache && Object.keys(cpu.cache).length > 0){
@@ -40,8 +42,8 @@ export default async function cpuCommand(){
     }else{
         console.log(chalk.yellow(" N/A"));
     }
-    
     console.log();
+    
 }
 
-cpuCommand()
+cpuCommand();
