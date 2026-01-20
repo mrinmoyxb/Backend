@@ -7,13 +7,20 @@
 </head>
 <body>
     <h1>Chat APP</h1>
-    <button onclick="createConnection()">Create WS connection</button>
+    <input type="text" id="message" placeholder="Type your message"/>
+    <button id="sendBtn">Send</button>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        function createConnection(){
-            const socker = io();
-        }
+            const socket = io();
+            const btn = document.getElementById("sendBtn");
+            const msg = document.getElementById("message");
+            btn.addEventListener("click", (e)=>{
+                const message = msg.value;
+                console.log(message);
+                socket.emit("user-message", message);
+            })
+        
     </script>
 </body>
 </html>
