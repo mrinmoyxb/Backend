@@ -9,9 +9,8 @@ const io = new Server(server);
 
 io.on("connection", (socket)=>{
     socket.on("user-message", (message)=>{
-        console.log("Message from user: ", message);
+        io.emit("message", message);
     })
-    
 })
 
 app.use(express.static(path.resolve("./public")));
