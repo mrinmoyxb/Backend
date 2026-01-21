@@ -7,27 +7,18 @@ const db = drizzle(process.env.DATABASE_URL!);
 
 async function main(){
     const user: typeof userTable.$inferInsert = {
-        name: "John",
-        age: 30,
-        email: "john@mail.com"
+        name: "Kenedy",
+        age: 31,
+        email: "ken@mail.com"
     };
 
     await db.insert(userTable).values(user);
     console.log('New user created!');
-
-    const users = await db.select().from(userTable);
-    console.log('Getting all users from the database: ', users)
-
-
-    await db
-    .update(userTable)
-    .set({
-      age: 31,
-    })
-    .where(eq(userTable.email, user.email));
-    console.log('User info updated!')
-    await db.delete(userTable).where(eq(userTable.email, user.email));
-    console.log('User deleted!')
 }
 
-main();
+async function fetchUsers(){
+    const user = await db.select().from(userTable);
+    console.log("Getting all users from database: \n", user);
+}
+
+fetchUsers();
