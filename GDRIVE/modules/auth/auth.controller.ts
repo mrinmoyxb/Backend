@@ -1,7 +1,7 @@
 import { type Request, type Response } from "express";
-import { userModel } from "../../modules/users/user.model.js"
-import { utilCheckValidName, utilHashPassword, utilCheckHashPassword } from "../../utils/authUtil.js";
+import { utilCheckValidName } from '../../utils/authUtil.js'
 import validator from "validator";
+import { serviceAuthLogin, serviceAuthRegister } from "./auth.service.js";
 
 export async function setRegisterUser(req: Request, res: Response){
     try{
@@ -25,26 +25,16 @@ export async function setRegisterUser(req: Request, res: Response){
             return res.status(400).json({msg: "invalid email address"});
         }
 
-        const existingUser = await userModel.findOne({email: normalizedMail});
-        if(existingUser){
-            return res.status(400).json({msg: "invalid credentials"});
+        const result = await serviceAuthRegister(username, normalizedMail, userpassword);
+        return res.status(201).json({msg: "user registered successfully", email: result.userEmail});
+
+    }catch(error: any){
+        if(error.message === "EMAIL_EXISTS"){
+            return res.status(400).json({ msg: "email already registered" });
         }
-
-        if(!(userpassword.length>=8 && userpassword.length<=12)){
-            return res.status(400).json({msg: "length of password is not within the range"});
+        if(error.message === "UNSUPPORTED_LENGTH"){
+            return res.status(400).json({ msg: "the length of the password is not within the range" });
         }
-
-        const hashedPassword = await utilHashPassword(userpassword);
-
-        const newUser = await userModel.create({
-            name: username,
-            email: normalizedMail,
-            password: hashedPassword
-        });
-        console.log(newUser);
-        return res.status(201).json({msg: "user registered successfully"});
-
-    }catch(error){
         return res.status(500).json({msg: "internal server error"});
     }
 
@@ -67,16 +57,16 @@ export async function setLoginUser(req: Request, res: Response){
             return res.status(400).json({ msg: "invalid credentials" });
         }
 
-        const existingUser = await userModel.findOne({ email: normalizedMail });
-        if (!existingUser) {
-            return res.status(400).json({ msg: "invalid email" });
-        }
+        const result = await serviceAuthLogin(normalizedMail, userpassword);
+        return res.status(201).json({msg: "user logged successfully", email: result.userEmail});
         
-        const hashedPassword = await utilCheckHashPassword(userpassword, existingUser.password);
-        if (!hashedPassword) {
-            return res.status(400).json({ msg: "incorrect password" });
+    }catch(error: any){
+        if(error.message === "INVALID_EMAIL"){
+            return res.status(400).json({msg: "invalid credentials"});
         }
-    }catch(error){
+        if(error.message === "INVALID_PASSWORD"){
+            return res.status(400).json({msg: "incorrect password"});
+        }
         return res.status(500).json({msg: "internal server error"});
     }
 }
