@@ -1,5 +1,5 @@
 import { userModel } from "../../modules/users/user.model.js"
-import { utilHashPassword, utilCheckHashPassword } from "../../utils/authUtil.js";
+import { utilHashPassword, utilCheckHashPassword, utilGetAccessToken, utilGetRefreshToken } from "../../utils/authUtil.js";
 
 
 export async function serviceAuthRegister(username: string, useremail: string, userpassword: string) {
@@ -35,6 +35,10 @@ export async function serviceAuthLogin(useremail: string, userpassword: string) 
     if (!hashedPassword) {
         throw new Error("INVALID_PASSWORD");
     }
+
+    const accessToken = utilGetAccessToken(existingUser.email, existingUser._id);
+    const refreshToken = utilGetRefreshToken(existingUser.email, existingUser._id);
+    const hashedToken = 
 
     return {
         userEmail: existingUser.email
