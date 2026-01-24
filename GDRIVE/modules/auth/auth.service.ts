@@ -1,5 +1,6 @@
 import { userModel } from "../../modules/users/user.model.js"
-import { utilHashPassword, utilCheckHashPassword, utilGetAccessToken, utilGetRefreshToken, utilHashRefreshToken } from "../../utils/authUtil.js";
+import { utilHashPassword, utilCheckHashPassword, utilGetAccessToken, utilGetRefreshToken, utilHashRefreshToken, utilVerifyRefreshToken } from "../../utils/authUtil.js";
+import bcrypt from "bcrypt";
 
 
 export async function serviceAuthRegister(username: string, useremail: string, userpassword: string) {
@@ -40,7 +41,7 @@ export async function serviceAuthLogin(useremail: string, userpassword: string) 
     const refreshToken = utilGetRefreshToken(existingUser.email, existingUser._id);
     const hashedToken = await utilHashRefreshToken(refreshToken);
     await userModel.findOneAndUpdate(
-        {_id: existingUser._id},
+        existingUser._id,
         {$set: {refreshToken: hashedToken}}
     );
 
@@ -52,4 +53,29 @@ export async function serviceAuthLogin(useremail: string, userpassword: string) 
             email: existingUser.email
         }
     }
+}
+
+
+export function serviceAuthRefreshToken(){
+
+}
+
+export async function serviceAuthLogout(refreshToken: any){
+    const decodedToken = utilVerifyRefreshToken(refreshToken) as any;
+
+    const user = await userModel.findById(decodedToken.userid);
+    if (!user || !user.refreshToken) {
+        throw new Error("INVALID_REFRESH_TOKEN_FROM_USER");
+    }
+
+    const isValidRefreshToken = await bcrypt.compare(refreshToken, user.refreshToken);
+    if (!isValidRefreshToken) {
+        throw new Error("INVALID_REFRESH_TOKEN");
+    }
+
+    const check = await userModel.findByIdAndUpdate(
+        user._id,
+        {
+            $set: { refreshToken: null }
+        });
 }

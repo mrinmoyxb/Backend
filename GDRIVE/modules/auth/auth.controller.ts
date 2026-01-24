@@ -1,7 +1,8 @@
 import { type Request, type Response } from "express";
-import { utilCheckValidName } from '../../utils/authUtil.js'
+import { utilCheckValidName, utilHashRefreshToken, utilVerifyRefreshToken } from '../../utils/authUtil.js'
 import validator from "validator";
-import { serviceAuthLogin, serviceAuthRegister } from "./auth.service.js";
+import { serviceAuthLogin, serviceAuthLogout, serviceAuthRegister } from "./auth.service.js";
+import { userModel } from "../users/user.model.js";
 
 export async function setRegisterUser(req: Request, res: Response){
     try{
@@ -88,8 +89,30 @@ export async function setLoginUser(req: Request, res: Response){
     }
 }
 
-export function setLogoutUser(){
-    
+export async function setLogoutUser(req: Request, res: Response){
+    try{
+        const refreshToken  = req.cookies?.refreshToken;
+        if (!refreshToken) {
+            return res.status(400).json({ msg: "missing refresh token" });
+        }
+
+        await serviceAuthLogout(refreshToken);
+
+        res.clearCookie("refreshToken", {
+            httpOnly: true,
+            sameSite: "strict",
+            secure: true
+        })
+        return res.status(200).json({ msg: "logout successful" });
+    }catch (error: any){
+        if(error.message === "INVALID_REFRESH_TOKEN_FROM_USER"){
+            return res.status(401).json({msg: "invalid refresh token from user"});
+        }
+        if(error.message === "INVALID_REFRESH_TOKEN"){
+            return res.status(401).json({msg: "mismatch refresh token"});
+        }
+        return res.status(500).json({msg: "internal server error"});
+    }
 }
 
 export function getUser(){

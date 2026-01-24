@@ -44,7 +44,7 @@ export function utilGetAccessToken(email: string, _id: Types.ObjectId){
 export function utilVerifyAccessToken(token: string){
     const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
     if (!ACCESS_TOKEN) {
-        throw new Error("INVALID_ACCESS_TOKEN");
+        throw new Error("INVALID_ACCESS_TOKEN_FROM_USER");
     }
     const isTokenValid = jwt.verify(token, ACCESS_TOKEN);
     return isTokenValid;
@@ -70,7 +70,7 @@ export function utilGetRefreshToken(email: string, _id: Types.ObjectId){
 export function utilVerifyRefreshToken(token: string){
     const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
     if (!REFRESH_TOKEN) {
-        throw new Error("INVALID_REFRESH_TOKEN");
+        throw new Error("INVALID_REFRESH_TOKEN_FROM_USER");
     }
     const isTokenValid = jwt.verify(token, REFRESH_TOKEN);
     return isTokenValid;
