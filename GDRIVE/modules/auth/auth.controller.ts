@@ -58,7 +58,15 @@ export async function setLoginUser(req: Request, res: Response){
         }
 
         const result = await serviceAuthLogin(normalizedMail, userpassword);
-        return res.status(201).json({msg: "user logged successfully", email: result.userEmail});
+        const {accessToken, refreshToken, user} = result;
+
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "strict",
+            maxAge: 30 * 60 * 60 * 1000
+        })
+        return res.status(201).json({msg: "user logged successfully", accessToken: accessToken});
         
     }catch(error: any){
         if(error.message === "INVALID_EMAIL"){
@@ -67,12 +75,21 @@ export async function setLoginUser(req: Request, res: Response){
         if(error.message === "INVALID_PASSWORD"){
             return res.status(400).json({msg: "incorrect password"});
         }
+        if(error.message === "INVALID_SECRET_ACCESS_TOKEN"){
+            return res.status(401).json({msg: "invalid secret access token"});
+        }
+        if(error.message === "INVALID_SECRET_REFRESH_TOKEN"){
+            return res.status(401).json({msg: "invalid secret refresh token"});
+        }
+        if(error.message === "INVALID_SALT_ROUNDS"){
+            return res.status(400).json({msg: "invalid salt rounds"});
+        }
         return res.status(500).json({msg: "internal server error"});
     }
 }
 
 export function setLogoutUser(){
-
+    
 }
 
 export function getUser(){

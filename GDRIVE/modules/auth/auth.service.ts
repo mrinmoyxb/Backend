@@ -1,5 +1,5 @@
 import { userModel } from "../../modules/users/user.model.js"
-import { utilHashPassword, utilCheckHashPassword, utilGetAccessToken, utilGetRefreshToken } from "../../utils/authUtil.js";
+import { utilHashPassword, utilCheckHashPassword, utilGetAccessToken, utilGetRefreshToken, utilHashRefreshToken } from "../../utils/authUtil.js";
 
 
 export async function serviceAuthRegister(username: string, useremail: string, userpassword: string) {
@@ -38,9 +38,18 @@ export async function serviceAuthLogin(useremail: string, userpassword: string) 
 
     const accessToken = utilGetAccessToken(existingUser.email, existingUser._id);
     const refreshToken = utilGetRefreshToken(existingUser.email, existingUser._id);
-    const hashedToken = 
+    const hashedToken = await utilHashRefreshToken(refreshToken);
+    await userModel.findOneAndUpdate(
+        {_id: existingUser._id},
+        {$set: {refreshToken: hashedToken}}
+    );
 
     return {
-        userEmail: existingUser.email
-    };
+        accessToken, 
+        refreshToken,
+        user: {
+            id: existingUser._id,
+            email: existingUser.email
+        }
+    }
 }

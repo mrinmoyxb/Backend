@@ -24,64 +24,56 @@ export async function utilCheckHashPassword(password: string, exisitingHashedPas
     return isPasswordValid;
 }
 
-export function utilGetAccessToken(email: string, _id: Types.ObjectId) {
+export function utilGetAccessToken(email: string, _id: Types.ObjectId){
     let payload = {
-        plemail: email,
-        plid: _id.toString()
+        useremail: email,
+        userid: _id.toString()
     }
     const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
     if (!ACCESS_TOKEN) {
-        throw new Error("INVALID_ACCESS_TOKEN");
+        throw new Error("INVALID_SECRET_ACCESS_TOKEN");
     }
     const accessToken = jwt.sign(
         payload,
         ACCESS_TOKEN, {
         expiresIn: "15m"
-    })
+    });
     return accessToken;
 }
 
-export function utilVerifyAccessToken(token: string): Object{
+export function utilVerifyAccessToken(token: string){
     const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
     if (!ACCESS_TOKEN) {
         throw new Error("INVALID_ACCESS_TOKEN");
     }
     const isTokenValid = jwt.verify(token, ACCESS_TOKEN);
-    if(isTokenValid){
-        return isTokenValid;
-    }else{
-        throw new Error("INVALID_USER_ACCESS_TOKEN");
-    }
-}
-
-export function utilVerifyRefreshToken(token: string): Object{
-    const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
-    if (!ACCESS_TOKEN) {
-        throw new Error("INVALID_REFRESH_TOKEN");
-    }
-    const isTokenValid = jwt.verify(token, ACCESS_TOKEN);
-    if(isTokenValid){
-        return isTokenValid;
-    }else{
-        throw new Error("INVALID_USER_REFRESH_TOKEN");
-    }
+    return isTokenValid;
 }
 
 export function utilGetRefreshToken(email: string, _id: Types.ObjectId){
     let payload = {
-        plemail: email,
-        plid: _id.toString()
+        useremail: email,
+        userid: _id.toString()
     }
-    const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
-    if (!ACCESS_TOKEN) {
-        throw new Error("INVALID_REFRESH_TOKEN");
+    const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
+    if (!REFRESH_TOKEN) {
+        throw new Error("INVALID_SECRET_REFRESH_TOKEN");
     }
     const refreshToken = jwt.sign(
         payload,
-        ACCESS_TOKEN, {
+        REFRESH_TOKEN, {
         expiresIn: "30d"
     })
     return refreshToken;
+}
+
+export function utilVerifyRefreshToken(token: string){
+    const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
+    if (!REFRESH_TOKEN) {
+        throw new Error("INVALID_REFRESH_TOKEN");
+    }
+    const isTokenValid = jwt.verify(token, REFRESH_TOKEN);
+    return isTokenValid;
 }
 
 export async function utilHashRefreshToken(token: string): Promise<string>{
@@ -89,7 +81,7 @@ export async function utilHashRefreshToken(token: string): Promise<string>{
     if(!saltRounds){
         throw new Error("INVALID_SALT_ROUNDS");
     }
-    const hahsedToken = await bcrypt.hash(token, saltRounds);
-    return hahsedToken;
+    const hashedToken = await bcrypt.hash(token, saltRounds);
+    return hashedToken;
 }
 
