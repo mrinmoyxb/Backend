@@ -31,7 +31,7 @@ export function utilGetAccessToken(email: string, _id: Types.ObjectId){
     }
     const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
     if (!ACCESS_TOKEN) {
-        throw new Error("INVALID_SECRET_ACCESS_TOKEN");
+        throw new Error("SECRET_ACCESS_TOKEN_MISSING");
     }
     const accessToken = jwt.sign(
         payload,
@@ -44,7 +44,7 @@ export function utilGetAccessToken(email: string, _id: Types.ObjectId){
 export function utilVerifyAccessToken(token: string){
     const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
     if (!ACCESS_TOKEN) {
-        throw new Error("INVALID_ACCESS_TOKEN_FROM_USER");
+        throw new Error("SECRET_ACCESS_TOKEN_MISSING");
     }
     const isTokenValid = jwt.verify(token, ACCESS_TOKEN);
     return isTokenValid;
@@ -57,7 +57,7 @@ export function utilGetRefreshToken(email: string, _id: Types.ObjectId){
     }
     const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
     if (!REFRESH_TOKEN) {
-        throw new Error("INVALID_SECRET_REFRESH_TOKEN");
+        throw new Error("SECRET_REFRESH_TOKEN_MISSING");
     }
     const refreshToken = jwt.sign(
         payload,
@@ -70,7 +70,7 @@ export function utilGetRefreshToken(email: string, _id: Types.ObjectId){
 export function utilVerifyRefreshToken(token: string){
     const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
     if (!REFRESH_TOKEN) {
-        throw new Error("INVALID_REFRESH_TOKEN_FROM_USER");
+        throw new Error("SECRET_REFRESH_TOKEN_MISSING");
     }
     const isTokenValid = jwt.verify(token, REFRESH_TOKEN);
     return isTokenValid;
@@ -85,3 +85,22 @@ export async function utilHashRefreshToken(token: string): Promise<string>{
     return hashedToken;
 }
 
+export function utilGenerateOTP(length: number): string{
+    const digits: string = "0123456789";
+    let otp: string = "";
+    const randomValues = new Uint32Array(length);
+    crypto.getRandomValues(randomValues);
+    for(let i: number = 0; i<length; i++){
+        otp += digits[randomValues[i]%10];
+    }
+    return otp;
+}
+
+export async function utilHashOTP(otp: string){
+    const saltRounds = Number(process.env.OTP_SALT_ROUNDS);
+    if(!saltRounds){
+        throw new Error("INVALID_OTP_SALT_ROUNDS");
+    }
+    const hashedOTP = await bcrypt.hash(otp, saltRounds);
+    return hashedOTP;
+}

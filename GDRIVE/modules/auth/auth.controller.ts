@@ -1,8 +1,9 @@
 import { type Request, type Response } from "express";
-import { utilCheckValidName, utilHashRefreshToken, utilVerifyRefreshToken } from '../../utils/authUtil.js'
+import { utilCheckValidName, utilGenerateOTP, utilHashOTP, utilHashPassword, utilHashRefreshToken, utilVerifyRefreshToken } from '../../utils/authUtil.js'
 import validator from "validator";
 import { serviceAuthLogin, serviceAuthLogout, serviceAuthRegister } from "./auth.service.js";
 import { userModel } from "../users/user.model.js";
+import { rmSync } from "node:fs";
 
 export async function setRegisterUser(req: Request, res: Response){
     try{
@@ -76,11 +77,11 @@ export async function setLoginUser(req: Request, res: Response){
         if(error.message === "INVALID_PASSWORD"){
             return res.status(400).json({msg: "incorrect password"});
         }
-        if(error.message === "INVALID_SECRET_ACCESS_TOKEN"){
-            return res.status(401).json({msg: "invalid secret access token"});
+        if(error.message === "SECRET_ACCESS_TOKEN_MISSING"){
+            return res.status(401).json({msg: "secret access token missing"});
         }
-        if(error.message === "INVALID_SECRET_REFRESH_TOKEN"){
-            return res.status(401).json({msg: "invalid secret refresh token"});
+        if(error.message === "SECRET_REFRESH_TOKEN_MISSING"){
+            return res.status(401).json({msg: "secret refresh token missing"});
         }
         if(error.message === "INVALID_SALT_ROUNDS"){
             return res.status(400).json({msg: "invalid salt rounds"});
@@ -113,6 +114,28 @@ export async function setLogoutUser(req: Request, res: Response){
         }
         return res.status(500).json({msg: "internal server error"});
     }
+}
+
+export async function setForgotPassword(req: Request, res: Response){
+    const { useremail } = req.body.email;
+
+    const normalizedMail = useremail.toLowerCase();
+
+    const isUser = await userModel.findOne({email: normalizedMail});
+
+    if(!isUser){
+        return res.status(404).json({msg: "email not registered"});
+    }
+
+    const OTP = utilGenerateOTP(4);
+    const hashedOTP = await utilHashOTP(OTP);
+
+    await userModel.findByIdAndUpdate(isUser._id, {
+        $set: {resetOTP: hashedOTP}
+    })
+
+    return res.status(200)
+
 }
 
 export function getUser(){
