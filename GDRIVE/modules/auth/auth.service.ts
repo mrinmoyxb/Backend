@@ -1,6 +1,7 @@
 import { userModel } from "../../modules/users/user.model.js"
-import { utilHashPassword, utilCheckHashPassword, utilGetAccessToken, utilGetRefreshToken, utilHashRefreshToken, utilVerifyRefreshToken } from "../../utils/authUtil.js";
+import { utilHashPassword, utilCheckHashPassword, utilGetAccessToken, utilGetRefreshToken, utilHashRefreshToken, utilVerifyRefreshToken, utilGenerateOTP, utilHashOTP, utilSendOTPMail } from "../../utils/authUtil.js";
 import bcrypt from "bcrypt";
+import { Types } from "mongoose";
 
 
 export async function serviceAuthRegister(username: string, useremail: string, userpassword: string) {
@@ -55,11 +56,6 @@ export async function serviceAuthLogin(useremail: string, userpassword: string) 
     }
 }
 
-
-export function serviceAuthRefreshToken(){
-
-}
-
 export async function serviceAuthLogout(refreshToken: any){
     const decodedToken = utilVerifyRefreshToken(refreshToken) as any;
 
@@ -78,4 +74,54 @@ export async function serviceAuthLogout(refreshToken: any){
         {
             $set: { refreshToken: null }
         });
+}
+
+export async function serviceAuthForgotPassword(useremail: string): Promise<Types.ObjectId>{
+    const isUser = await userModel.findOne({email: useremail});
+    
+    if(!isUser){
+        throw new Error("INVALID_EMAIL");
+    }
+
+    const otp = utilGenerateOTP(4);
+    const hashedOTP = await utilHashOTP(otp);
+
+    await userModel.findByIdAndUpdate(isUser._id,
+        {$set: {
+            resetOTP: hashedOTP
+        }}
+    )
+
+    await utilSendOTPMail(useremail, otp);
+    return isUser._id;
+}
+
+export async function serviceAuthVerifyOTP(otp: string, userId: string){
+    const isUser = await userModel.findById(userId);
+    if(!isUser){
+        throw new Error("USER_NOT_FOUND");
+    }
+
+    const hashedOTP = await bcrypt.compare(otp, isUser.resetOTP);
+    if(hashedOTP){
+        throw new Error("OTP_MISMATCH");
+    }
+}
+
+export async function serviceResetPassword(userId: string, newPassword: string){
+    
+    if (!(newPassword.length >= 8 && newPassword.length <= 12)) {
+        throw new Error("UNSUPPORTED_LENGTH");
+    }
+    
+    const isUser = await userModel.findById(userId);
+    if(!isUser){
+        throw new Error("USER_NOT_FOUND");
+    }
+
+    await userModel.updateOne(isUser._id,
+        {$set: {
+            password: newPassword
+        }}
+    )
 }

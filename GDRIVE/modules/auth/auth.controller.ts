@@ -1,8 +1,11 @@
 import { type Request, type Response } from "express";
-import { utilCheckValidName, utilGenerateOTP, utilHashOTP, utilHashPassword, utilHashRefreshToken, utilVerifyRefreshToken } from '../../utils/authUtil.js'
+import { utilCheckValidName } from '../../utils/authUtil.js'
 import validator from "validator";
-import { serviceAuthLogin, serviceAuthLogout, serviceAuthRegister } from "./auth.service.js";
-import { userModel } from "../users/user.model.js";
+import { serviceAuthForgotPassword, serviceAuthLogin, serviceAuthLogout, serviceAuthRegister, serviceAuthVerifyOTP, serviceResetPassword } from "./auth.service.js";
+
+interface ForgotPasswordRequest extends Request{
+    userId?: string
+}
 
 export async function setRegisterUser(req: Request, res: Response){
     try{
@@ -115,30 +118,78 @@ export async function setLogoutUser(req: Request, res: Response){
     }
 }
 
-export async function setForgotPassword(req: Request, res: Response){
-    const { useremail } = req.body.email;
+export async function setForgotPassword(req: ForgotPasswordRequest, res: Response){
+    try{
+        const { useremail } = req.body.email;
+        if(!useremail){
+            return res.status(400).json({msg: "provide your registered email"});
+        }
 
-    const normalizedMail = useremail.toLowerCase();
+        const normalizedMail = useremail.toLowerCase();
 
-    const isUser = await userModel.findOne({email: normalizedMail});
+        const userId = await serviceAuthForgotPassword(normalizedMail);
+        req.userId = userId.toString();
+        return res.status(200).json({msg: "OTP sent"});
 
-    if(!isUser){
-        return res.status(404).json({msg: "email not registered"});
+    }catch(error: any){
+        if(error==="INVALID_EMAIL"){
+            return res.status(404).json({msg: "email not found"});
+        }
+        return res.status(500).json({msg: "internal server error"});
     }
-
-    const OTP = utilGenerateOTP(4);
-    const hashedOTP = await utilHashOTP(OTP);
-
-    await userModel.findByIdAndUpdate(isUser._id, {
-        $set: {resetOTP: hashedOTP}
-    })
-
-    
-
-    return res.status(200)
-
 }
 
-export function getUser(){
+export async function setVerifyOTP(req: ForgotPasswordRequest, res: Response){
+    try{
+        const { otp } = req.body.otp;
 
+        if(!otp){
+            return res.status(400).json({msg: "invalid OTP"});
+        }
+
+        if(!req.userId){
+            return res.status(404).json({msg: "userid not found"});
+        }
+
+        await serviceAuthVerifyOTP(otp, req.userId);
+
+    }catch(error: any){
+        if(error==="USER_NOT_FOUND"){
+            return res.status(404).json({msg: "userid not found"});
+        }
+        if(error==="OTP_MISMATCH"){
+            return res.status(400).json({msg: "otp mismatch"});
+        }
+        return res.status(500).json({msg: "internal server error"});
+    }
+}
+
+export async function setNewPassword(req: ForgotPasswordRequest, res: Response){
+    try{
+
+        const { newPassword, confirmPassword } = req.body;
+        if(!newPassword || !confirmPassword){
+            return res.status(400).json({msg: "all fields are required"});
+        }
+
+        if(newPassword!==confirmPassword){
+            return res.status(400).json({msg: "password mismatch"});
+        }
+
+        if(!req.userId){
+            return res.status(404).json({msg: "userid not found"});
+        }
+
+        await serviceResetPassword(req.userId, newPassword);
+        return res.status(200).json({msg: "password reset successfull"});
+
+    }catch(error: any){
+        if(error.message === "UNSUPPORTED_LENGTH"){
+            return res.status(400).json({ msg: "the length of the password is not within the range" });
+        }
+        if(error==="USER_NOT_FOUND"){
+            return res.status(404).json({msg: "userid not found"});
+        }
+        return res.status(500).json({msg: "internal server error"});
+    }
 }

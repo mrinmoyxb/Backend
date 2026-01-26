@@ -132,3 +132,7 @@ export async function utilSendOTPMail(to: string, otp: string){
         html: `<h1>Your OTP is ${otp}</h1>`
     })
 }
+
+export async function utilVerifyHashOTP(otp: string){
+    
+}

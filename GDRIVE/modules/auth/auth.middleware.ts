@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { utilGetAccessToken, utilHashRefreshToken, utilVerifyAccessToken, utilVerifyRefreshToken } from "../../utils/authUtil.js";
+import { utilHashRefreshToken, utilVerifyAccessToken, utilVerifyRefreshToken } from "../../utils/authUtil.js";
 import { userModel } from "../users/user.model.js";
 
 interface AuthenticatedRequest extends Request {
