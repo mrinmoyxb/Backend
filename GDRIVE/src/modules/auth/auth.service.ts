@@ -1,5 +1,5 @@
-import { userModel } from "../../modules/users/user.model.js"
-import { utilHashPassword, utilCheckHashPassword, utilGetAccessToken, utilGetRefreshToken, utilHashRefreshToken, utilVerifyRefreshToken, utilGenerateOTP, utilHashOTP, utilSendOTPMail } from "../../utils/authUtil.js";
+import { userModel } from "../users/user.model.ts"
+import { utilHashPassword, utilCheckHashPassword, utilGetAccessToken, utilGetRefreshToken, utilHashRefreshToken, utilVerifyRefreshToken, utilGenerateOTP, utilHashOTP, utilSendOTPMail } from "../../utils/authUtil.ts";
 import bcrypt from "bcrypt";
 import { Types } from "mongoose";
 

@@ -1,14 +1,8 @@
-import dotenv from "dotenv";
-
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
 import { Types } from "mongoose";
 import path from "path";
 import nodemailer from "nodemailer";
-
-dotenv.config({
-  path: path.resolve(process.cwd(), "../.env")
-});
 
 //! REGISTER USER
 export function utilCheckValidName(clientName: string): boolean{
@@ -99,7 +93,8 @@ export function utilGenerateOTP(length: number): string{
     const randomValues = new Uint32Array(length);
     crypto.getRandomValues(randomValues);
     for(let i: number = 0; i<length; i++){
-        otp += digits[randomValues[i]%10];
+        const value = randomValues[i]!;
+        otp += digits[value%10];
     }
     return otp;
 }

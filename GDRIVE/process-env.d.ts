@@ -3,7 +3,6 @@ declare global {
     interface ProcessEnv {
       OTP_SALT_ROUNDS: string;
       ACCESS_TOKEN: string;
-      // add other variables here
     }
   }
 }

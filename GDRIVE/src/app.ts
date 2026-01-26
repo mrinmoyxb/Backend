@@ -1,11 +1,11 @@
-import dotenv from "dotenv";
-dotenv.config();
-
+import "dotenv/config"
 import express from "express";
+import authRouter from "./modules/auth/auth.routes.ts";
 
 const app = express();
-const PORT = Number(process.env.PORT) || 9009;
 
-app.listen(PORT, ()=>{
-    console.log(`Server is running on PORT: ${PORT}`);
-})
+app.set("view engine", "ejs");
+
+app.use("/api/v1/auth", authRouter);
+
+export default app;

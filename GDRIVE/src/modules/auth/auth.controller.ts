@@ -1,7 +1,7 @@
 import { type Request, type Response } from "express";
-import { utilCheckValidName } from '../../utils/authUtil.js'
+import { utilCheckValidName } from '../../utils/authUtil.ts';
 import validator from "validator";
-import { serviceAuthForgotPassword, serviceAuthLogin, serviceAuthLogout, serviceAuthRegister, serviceAuthVerifyOTP, serviceResetPassword } from "./auth.service.js";
+import { serviceAuthForgotPassword, serviceAuthLogin, serviceAuthLogout, serviceAuthRegister, serviceAuthVerifyOTP, serviceResetPassword } from "./auth.service.ts";
 
 interface ForgotPasswordRequest extends Request{
     userId?: string
