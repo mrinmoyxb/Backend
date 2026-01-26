@@ -1,10 +1,16 @@
 import dotenv from "dotenv";
-dotenv.config();
 
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
 import { Types } from "mongoose";
+import path from "path";
+import nodemailer from "nodemailer";
 
+dotenv.config({
+  path: path.resolve(process.cwd(), "../.env")
+});
+
+//! REGISTER USER
 export function utilCheckValidName(clientName: string): boolean{
     const regex = /^[A-Za-z]+$/;
     return regex.test(clientName);
@@ -19,6 +25,7 @@ export async function utilHashPassword(password: string): Promise<string>{
     return hashedPassword;
 }
 
+//! LOGIN USER
 export async function utilCheckHashPassword(password: string, exisitingHashedPassword: string): Promise<boolean>{
     const isPasswordValid = await bcrypt.compare(password, exisitingHashedPassword);
     return isPasswordValid;
@@ -85,6 +92,7 @@ export async function utilHashRefreshToken(token: string): Promise<string>{
     return hashedToken;
 }
 
+//! FORGOT PASSWORD
 export function utilGenerateOTP(length: number): string{
     const digits: string = "0123456789";
     let otp: string = "";
@@ -103,4 +111,24 @@ export async function utilHashOTP(otp: string){
     }
     const hashedOTP = await bcrypt.hash(otp, saltRounds);
     return hashedOTP;
+}
+
+export async function utilSendOTPMail(to: string, otp: string){
+    const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: {
+            user: process.env.SERVICE_EMAIL,
+            pass: process.env.SERVICE_PASSWORD
+        }
+    });
+
+    await transporter.sendMail({
+        from: `"Orbit" <${process.env.SERVICE_EMAIL}>`,
+        to,
+        subject: "Password Reset OTP From Orbit",
+        text: `Your OTP is ${otp}`,
+        html: `<h1>Your OTP is ${otp}</h1>`
+    })
 }

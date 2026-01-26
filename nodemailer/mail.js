@@ -16,7 +16,7 @@ const transporter = nodemailer.createTransport({
    
 export async function sendOTP(to, otp){
     await transporter.sendMail({
-        from: `"CloudNest" <${process.env.EMAIL_ADDRESS}>`,
+        from: `"Orbit" <${process.env.EMAIL_ADDRESS}>`,
         to,
         subject: "Password Reset OTP",
         text: `Your OTP is ${otp}`,

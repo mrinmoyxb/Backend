@@ -3,7 +3,6 @@ import { utilCheckValidName, utilGenerateOTP, utilHashOTP, utilHashPassword, uti
 import validator from "validator";
 import { serviceAuthLogin, serviceAuthLogout, serviceAuthRegister } from "./auth.service.js";
 import { userModel } from "../users/user.model.js";
-import { rmSync } from "node:fs";
 
 export async function setRegisterUser(req: Request, res: Response){
     try{
@@ -133,6 +132,8 @@ export async function setForgotPassword(req: Request, res: Response){
     await userModel.findByIdAndUpdate(isUser._id, {
         $set: {resetOTP: hashedOTP}
     })
+
+    
 
     return res.status(200)
 
