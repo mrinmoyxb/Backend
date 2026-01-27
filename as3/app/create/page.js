@@ -9,13 +9,40 @@ const ProductForm = () => {
     image: null,
   });
 
+  let mime = "";
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleImageChange = (e) => {
-    setFormData({ ...formData, image: e.target.files[0] });
+  const handleImageChange = async (e) => {
+    const filename = e.target.files[0];
+    const mime = filename.type.split("/")[1];
+    console.log("file: ", filename);
+    console.log("extension: ", mime);
+    setFormData({ ...formData, 
+      image: e.target.files[0]
+    });
+
+    const response = await fetch("http://localhost:3200/api/get-presigned-url", {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        filename,
+        mime
+      })
+    })
+
+    if(!response){
+      console.log("Error fetching presigned URL");
+      return;
+    }
+
+    const data = await response.json()
+    console.log("Data from S3: ", data);
   };
 
   const handleSubmit = (e) => {
