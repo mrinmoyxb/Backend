@@ -6,7 +6,7 @@ import express from "express";
 import {PutObjectCommand, S3Client} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuidv4 } from 'uuid';
-import productModel from "./productsModel";
+import productModel from "./productsModel.js";
 import mongoose from "mongoose";
 
 const app = express();
@@ -28,7 +28,7 @@ const client = new S3Client({
     }
 });
 
-const createPresignedUrlWithClient = ({bucket, key}) => {
+const createPresignedUrlWithClient = ({bucket, key, mime}) => {
     const command = new PutObjectCommand({
         Bucket: bucket,
         Key: key,
@@ -46,7 +46,8 @@ app.post("/api/get-presigned-url", async (req, res)=>{
     const url = await createPresignedUrlWithClient(
         {
         bucket: process.env.BUCKET_NAME.toString(), 
-        key: fname
+        key: fname,
+        mime: mime
         }
 );
     return res.json({url: url, fileName: fname});
@@ -62,7 +63,7 @@ app.post("/api/product", async (req, res)=>{
     const product = await productModel.create({
         name: productName,
         description: productDescription,
-        price: productDescription.price,
+        price: productPrice,
         fileName: productFileName
     });
 

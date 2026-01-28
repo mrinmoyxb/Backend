@@ -19,20 +19,21 @@ const ProductForm = () => {
   const handleImageChange = async (e) => {
     const filename = e.target.files[0];
     const mime = filename.type.split("/")[1];
-    console.log("file: ", filename);
+    console.log("file: ", filename.name);
     console.log("extension: ", mime);
     setFormData({ ...formData, 
       image: e.target.files[0]
     });
 
+    //! Fetching Pre-Signed URL 
     const response = await fetch("http://localhost:3200/api/get-presigned-url", {
       method: 'POST',
       headers: {
         'content-type': 'application/json'
       },
       body: JSON.stringify({
-        filename,
-        mime
+        filename: filename.name,
+        mime: filename.type
       })
     })
 
@@ -41,8 +42,23 @@ const ProductForm = () => {
       return;
     }
 
-    const data = await response.json()
-    console.log("Data from S3: ", data);
+    const res = await response.json()
+    console.log("Data from S3: ", res);
+
+    //! Uploading file
+    const uploadResponse = await fetch(res.url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": filename.type || "application/octet-stream"
+      },
+      body: filename
+    })
+
+    if(!uploadResponse.ok){
+      console.log("Error uploading file to S3");
+      return;
+    }
+    console.log("FILE UPLOADED SUCCESSFULLY");
   };
 
   const handleSubmit = (e) => {
