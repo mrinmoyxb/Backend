@@ -55,16 +55,16 @@ app.post("/api/get-presigned-url", async (req, res)=>{
 
 //! MongoDB
 app.post("/api/product", async (req, res)=>{
-    const {productName, productDescription, productPrice, productFileName } = req.body;
-    if(!productName || !productDescription || !productPrice || !productFileName){
+    const {name, description, price, filename } = req.body;
+    if(!name || !description || !price || !filename){
         return res.status(400).json({msg: "all fields are required"});
     }
 
     const product = await productModel.create({
-        name: productName,
-        description: productDescription,
-        price: productPrice,
-        fileName: productFileName
+        name: name,
+        description: description,
+        price: price,
+        fileName: filename
     });
 
     return res.json({product: product});

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState } from 'react'; 
 
 const ProductForm = () => {
   const [formData, setFormData] = useState({
@@ -8,8 +8,6 @@ const ProductForm = () => {
     price: '',
     image: null,
   });
-
-  let mime = "";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,9 +19,6 @@ const ProductForm = () => {
     const mime = filename.type.split("/")[1];
     console.log("file: ", filename.name);
     console.log("extension: ", mime);
-    setFormData({ ...formData, 
-      image: e.target.files[0]
-    });
 
     //! Fetching Pre-Signed URL 
     const response = await fetch("http://localhost:3200/api/get-presigned-url", {
@@ -42,14 +37,17 @@ const ProductForm = () => {
       return;
     }
 
-    const res = await response.json()
+    const res = await response.json();
+    setFormData({ ...formData, 
+      image: res.fileName
+    });
     console.log("Data from S3: ", res);
 
     //! Uploading file
     const uploadResponse = await fetch(res.url, {
       method: "PUT",
       headers: {
-        "Content-Type": filename.type || "application/octet-stream"
+        "content-type": filename.type || "application/octet-stream"
       },
       body: filename
     })
@@ -58,13 +56,39 @@ const ProductForm = () => {
       console.log("Error uploading file to S3");
       return;
     }
-    console.log("FILE UPLOADED SUCCESSFULLY");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     console.log('Product Data:', formData);
-    // Add your submission logic here
+    let name = formData.name;
+    let description = formData.description;
+    let price =  formData.price;
+    let filename = formData.image;
+    const res = await fetch("http://localhost:3200/api/product", {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        name,
+        description,
+        price,
+        filename
+      })
+    })
+
+    if(!res.ok){
+      console.log("Failed to add to DB");
+      return;
+    }
+    console.log("Successfully added to DB");
+    setFormData({
+      name: '',
+      description: '',
+      price: '',
+      image: null,
+    })
   };
 
   return (
