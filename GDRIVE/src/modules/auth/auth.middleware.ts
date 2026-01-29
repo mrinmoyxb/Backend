@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { utilHashRefreshToken, utilVerifyAccessToken, utilVerifyRefreshToken } from "../../utils/authUtil.ts";
-import { userModel } from "../users/user.model.ts";
+import { userModel } from "../../models/user.model.ts";
 
 interface AuthenticatedRequest extends Request {
     userId?: string;
