@@ -19,22 +19,44 @@ app.get("/", (req, res) => {
   res.send("Hello from TS + Express 🚀");
 });
 
+//! POST: add data to atlas
 app.post("/atlas/api/v1/user", async (req, res)=>{
-  const {name, email, password} = req.body;
-  if(!name || !email || !password){
-    return res.status(400).json({msg: "all fields are required"});
+  try {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).json({ msg: "all fields are required" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await userModel.create({
+      name: name,
+      email: email,
+      password: hashedPassword
+    });
+
+    console.log("USER: ", user);
+    return res.status(200).json({ msg: "user added to atlas successfully" });
+  } catch (error) {
+    return res.status(500).json({ msg: "internal server error" });
   }
-  
-  const hashedPassword = await bcrypt.hash(password, 10);
+})
 
-  const user = await userModel.create({
-    name: name, 
-    email: email,
-    password: hashedPassword
-  });
+//! GET: fetch data from atlas
+app.get("/atlas/api/v1/user/:id", async (req, res)=>{
+  try {
+    const id = req.params.id;
 
-  console.log("USER: ", user);
-  return res.status(200).json({msg: "user added to atlas successfully"});
+    const user = await userModel.findById(id);
+
+    if (!user) {
+      return res.status(404).json({ msg: "user not found" });
+    } else {
+      return res.status(200).json({ msg: user });
+    }
+  } catch (error) {
+    return res.status(500).json({ msg: "internal server error" });
+  }
 })
 
 app.listen(3000, () => {
