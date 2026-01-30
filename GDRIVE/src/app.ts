@@ -6,7 +6,11 @@ import { utilConnectMongoDB } from "./utils/connectDBUtil.ts";
 const app = express();
 utilConnectMongoDB();
 
-app.set("view engine", "ejs");
+
+app.use(express.json());
+app.use(express.urlencoded({extended: false}));
+
+
 
 app.use("/api/v1/auth", authRouter);
 

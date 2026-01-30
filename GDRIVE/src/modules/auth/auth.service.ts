@@ -4,10 +4,11 @@ import bcrypt from "bcrypt";
 import { Types } from "mongoose";
 
 
-export async function serviceAuthRegister(username: string, useremail: string, userpassword: string) {
+export async function serviceAuthRegister(userfname: string, userlname: string, useremail: string, userpassword: string) {
+
     const existingUser = await userModel.findOne({ email: useremail });
     if (existingUser) {
-        throw Error("EMAIL_EXISTS");
+        throw Error("EMAIL_ALREADY_EXISTS");
     }
 
     if (!(userpassword.length >= 8 && userpassword.length <= 12)) {
@@ -17,7 +18,8 @@ export async function serviceAuthRegister(username: string, useremail: string, u
     const hashedPassword = await utilHashPassword(userpassword);
 
     const newUser = await userModel.create({
-        name: username,
+        fname: userfname,
+        lname: userlname,
         email: useremail,
         password: hashedPassword
     });
@@ -102,7 +104,7 @@ export async function serviceAuthVerifyOTP(otp: string, userId: string){
         throw new Error("USER_NOT_FOUND");
     }
 
-    const hashedOTP = await bcrypt.compare(otp, isUser.resetOTP);
+    const hashedOTP = await bcrypt.compare(otp, isUser.resetOTP as string);
     if(hashedOTP){
         throw new Error("OTP_MISMATCH");
     }

@@ -1,5 +1,5 @@
 import { type Request, type Response } from "express";
-import { utilCheckValidName } from '../../utils/authUtil.ts';
+import { utilCheckValidName, utilCheckLengthOfEachParameter } from '../../utils/authUtil.ts';
 import validator from "validator";
 import { serviceAuthForgotPassword, serviceAuthLogin, serviceAuthLogout, serviceAuthRegister, serviceAuthVerifyOTP, serviceResetPassword } from "./auth.service.ts";
 
@@ -9,32 +9,41 @@ interface ForgotPasswordRequest extends Request{
 
 export async function setRegisterUser(req: Request, res: Response){
     try{
-        const {username, useremail, userpassword} = req.body as {
-            username?: string,
-            useremail?: string,
-            userpassword?: string
+        let {fname, lname, email, password} = req.body as {
+            fname?: string,
+            lname?: string,
+            email?: string,
+            password?: string
         }
 
-        if(!username || !useremail || !userpassword){
+        if(!fname || !lname || !email || !password){
             return res.status(400).json({msg: "all fields are required"});
         }
 
-        const normalizedMail = useremail.toLowerCase();
+        const normalizedMail = email.toLowerCase();
 
-        if(!utilCheckValidName(username)){
-            return res.status(400).json({msg: "provide a valid name"});
+        if(!utilCheckValidName(fname)){
+            return res.status(400).json({msg: "provide a valid first name"});
         }
+
+        if(!utilCheckValidName(lname)){
+            return res.status(400).json({msg: "provide a valid last name"});
+        }
+
+        fname = utilCheckLengthOfEachParameter(fname, "fname");
+        lname = utilCheckLengthOfEachParameter(lname, "lname");
+        email = utilCheckLengthOfEachParameter(email, "email");
 
         if(!validator.isEmail(normalizedMail)){
             return res.status(400).json({msg: "invalid email address"});
         }
 
-        const result = await serviceAuthRegister(username, normalizedMail, userpassword);
+        const result = await serviceAuthRegister(fname, lname, normalizedMail, password);
         return res.status(201).json({msg: "user registered successfully", email: result.userEmail});
 
     }catch(error: any){
-        if(error.message === "EMAIL_EXISTS"){
-            return res.status(400).json({ msg: "email already registered" });
+        if(error.message === "EMAIL_ALREADY_EXISTS"){
+            return res.status(400).json({ msg: "this email is already registered" });
         }
         if(error.message === "UNSUPPORTED_LENGTH"){
             return res.status(400).json({ msg: "the length of the password is not within the range" });
@@ -46,22 +55,22 @@ export async function setRegisterUser(req: Request, res: Response){
 
 export async function setLoginUser(req: Request, res: Response){
     try{
-        const { useremail, userpassword } = req.body as {
-            useremail?: string,
-            userpassword?: string
+        const { email, password } = req.body as {
+            email?: string,
+            password?: string
         }
 
-        if (!useremail || !userpassword) {
+        if (!email || !password) {
             return res.status(400).json({ msg: "all fields are required" });
         }
 
-        const normalizedMail = useremail.toLowerCase();
+        const normalizedMail = email.toLowerCase();
 
         if (!validator.isEmail(normalizedMail)) {
             return res.status(400).json({ msg: "invalid credentials" });
         }
 
-        const result = await serviceAuthLogin(normalizedMail, userpassword);
+        const result = await serviceAuthLogin(normalizedMail, password);
         const {accessToken, refreshToken, user} = result;
 
         res.cookie("refreshToken", refreshToken, {
@@ -120,12 +129,12 @@ export async function setLogoutUser(req: Request, res: Response){
 
 export async function setForgotPassword(req: ForgotPasswordRequest, res: Response){
     try{
-        const { useremail } = req.body.email;
-        if(!useremail){
+        const { email } = req.body.email;
+        if(!email){
             return res.status(400).json({msg: "provide your registered email"});
         }
 
-        const normalizedMail = useremail.toLowerCase();
+        const normalizedMail = email.toLowerCase();
 
         const userId = await serviceAuthForgotPassword(normalizedMail);
         req.userId = userId.toString();

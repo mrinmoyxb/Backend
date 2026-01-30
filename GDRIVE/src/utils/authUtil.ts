@@ -1,13 +1,37 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
 import { Types } from "mongoose";
-import path from "path";
 import nodemailer from "nodemailer";
 
 //! REGISTER USER
 export function utilCheckValidName(clientName: string): boolean{
+    clientName = clientName.split(" ")[0];
     const regex = /^[A-Za-z]+$/;
     return regex.test(clientName);
+}
+
+type FieldType = "fname" | "lname" | "email"
+export function utilCheckLengthOfEachParameter(param: string, field: FieldType): string{
+   
+    const trimmed = param.trim();
+
+    const maxLimits: Record<FieldType, number> = {
+        fname: 50,
+        lname: 50,
+        email: 254
+    };
+
+    if(trimmed.length == 0){
+        throw new Error(`${field} cannot be empty`);
+    }
+
+    if (trimmed.length > maxLimits[field]) {
+    throw new Error(
+      `${field} exceeds maximum length of ${maxLimits[field]} characters`
+    );
+  }
+
+  return trimmed;
 }
 
 export async function utilHashPassword(password: string): Promise<string>{
