@@ -1,10 +1,14 @@
 import { type Request, type Response } from "express";
-import { utilCheckValidName, utilCheckLengthOfEachParameter } from '../../utils/authUtil.ts';
+import { utilCheckValidName, utilCheckLengthOfEachParameter, utilGetNewAccessToken } from '../../utils/authUtil.ts';
 import validator from "validator";
 import { serviceAuthForgotPassword, serviceAuthLogin, serviceAuthLogout, serviceAuthRegister, serviceAuthVerifyOTP, serviceResetPassword } from "./auth.service.ts";
 
 interface ForgotPasswordRequest extends Request{
     userId?: string
+}
+
+interface AuthenticatedRequest extends Request {
+    userId?: string;
 }
 
 export async function setRegisterUser(req: Request, res: Response){
@@ -19,7 +23,7 @@ export async function setRegisterUser(req: Request, res: Response){
         if(!fname || !lname || !email || !password){
             return res.status(400).json({msg: "all fields are required"});
         }
-
+        
         const normalizedMail = email.toLowerCase();
 
         if(!utilCheckValidName(fname)){
@@ -29,7 +33,7 @@ export async function setRegisterUser(req: Request, res: Response){
         if(!utilCheckValidName(lname)){
             return res.status(400).json({msg: "provide a valid last name"});
         }
-
+        
         fname = utilCheckLengthOfEachParameter(fname, "fname");
         lname = utilCheckLengthOfEachParameter(lname, "lname");
         email = utilCheckLengthOfEachParameter(email, "email");
@@ -37,7 +41,7 @@ export async function setRegisterUser(req: Request, res: Response){
         if(!validator.isEmail(normalizedMail)){
             return res.status(400).json({msg: "invalid email address"});
         }
-
+        
         const result = await serviceAuthRegister(fname, lname, normalizedMail, password);
         return res.status(201).json({msg: "user registered successfully", email: result.userEmail});
 
@@ -71,7 +75,7 @@ export async function setLoginUser(req: Request, res: Response){
         }
 
         const result = await serviceAuthLogin(normalizedMail, password);
-        const {accessToken, refreshToken, user} = result;
+        const { accessToken, refreshToken } = result;
 
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
@@ -82,8 +86,8 @@ export async function setLoginUser(req: Request, res: Response){
         return res.status(201).json({msg: "user logged successfully", accessToken: accessToken});
         
     }catch(error: any){
-        if(error.message === "INVALID_EMAIL"){
-            return res.status(400).json({msg: "invalid credentials"});
+        if(error.message === "EMAIL_NOT_REGISTERED"){
+            return res.status(400).json({msg: "invalid credentials, email not registered"});
         }
         if(error.message === "INVALID_PASSWORD"){
             return res.status(400).json({msg: "incorrect password"});
@@ -99,6 +103,16 @@ export async function setLoginUser(req: Request, res: Response){
         }
         return res.status(500).json({msg: "internal server error"});
     }
+}
+
+export async function setNewAccessTokenUser(req: AuthenticatedRequest, res: Response){
+    const userId = req.userId;
+    if(!userId){
+        return res.status(404).json({msg: "invalid user id"});
+    }
+
+    const newAccessToken = await utilGetNewAccessToken(userId as string);
+    return res.status(200).json({accessToken: newAccessToken, msg: "new access token!!!"});
 }
 
 export async function setLogoutUser(req: Request, res: Response){

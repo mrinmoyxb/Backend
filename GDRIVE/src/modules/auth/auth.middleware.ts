@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { utilHashRefreshToken, utilVerifyAccessToken, utilVerifyRefreshToken } from "../../utils/authUtil.ts";
+import { utilHashRefreshToken, utilVerifyAccessToken, utilVerifyHashedRefreshToken, utilVerifyRefreshToken } from "../../utils/authUtil.ts";
 import { userModel } from "../../models/user.model.ts";
 
 interface AuthenticatedRequest extends Request {
@@ -26,7 +26,7 @@ export function middlewareAuthenticateAccessToken(req: AuthenticatedRequest, res
         req.userId = decodedToken.userid;
         next();
     }catch(error){
-        return res.status(403).json({msg: "invalid or expired access token"});
+        return res.status(401).json({msg: "invalid or expired access token"});
     }
 }
 
@@ -42,15 +42,18 @@ export async function middlewareAuthenticateRefreshToken(req: AuthenticatedReque
             return res.status(401).json({msg: "invalid refresh token payload"});
         }
 
-        const hashedToken = await utilHashRefreshToken(refreshToken);
-        const user = await userModel.findById({id: decodedToken._id});
-        if(hashedToken === user?.refreshToken){
+        const user = await userModel.findById(decodedToken.userid);
+        if(!user || !user.refreshToken){
+            return res.status(401).json({msg: "invalid refresh token"});
+        }
+        const result = await utilVerifyHashedRefreshToken(refreshToken, user.refreshToken as string)
+        if(result){
             req.userId = decodedToken.userid;
             next();
         }else{
-            return res.status(400).json({msg: "invalid refresh token"});
+            return res.status(401).json({msg: "invalid refresh token"});
         }
     }catch(error){
-        return res.status(403).json({msg: "invalid or expired refresh token"});
+        return res.status(401).json({msg: "invalid or expired refresh token"});
     }
 }

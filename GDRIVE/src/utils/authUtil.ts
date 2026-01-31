@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
 import { Types } from "mongoose";
 import nodemailer from "nodemailer";
+import { userModel } from "../models/user.model.ts";
 
 //! REGISTER USER
 export function utilCheckValidName(clientName: string): boolean{
@@ -60,9 +61,9 @@ export function utilGetAccessToken(email: string, _id: Types.ObjectId){
     }
     const accessToken = jwt.sign(
         payload,
-        ACCESS_TOKEN, {
-        expiresIn: "15m"
-    });
+        ACCESS_TOKEN,
+        {expiresIn: "1m"}
+    );
     return accessToken;
 }
 
@@ -86,9 +87,9 @@ export function utilGetRefreshToken(email: string, _id: Types.ObjectId){
     }
     const refreshToken = jwt.sign(
         payload,
-        REFRESH_TOKEN, {
-        expiresIn: "30d"
-    })
+        REFRESH_TOKEN, 
+        {expiresIn: "30d"}
+    )
     return refreshToken;
 }
 
@@ -108,6 +109,34 @@ export async function utilHashRefreshToken(token: string): Promise<string>{
     }
     const hashedToken = await bcrypt.hash(token, saltRounds);
     return hashedToken;
+}
+
+//! REFRESH TOKEN AND ACCESS TOKEN
+export async function utilVerifyHashedRefreshToken(token: string, hashedToken: string): Promise<boolean>{
+    const isValid = await bcrypt.compare(token, hashedToken);
+    return isValid;
+}
+
+export async function utilGetNewAccessToken(id: string) {
+    const user = await userModel.findById(id);
+    if (!user) {
+        throw new Error("USER_NOT_FOUND")
+    }
+
+    let payload = {
+        useremail: user.email,
+        userid: id
+    }
+    const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
+    if (!ACCESS_TOKEN) {
+        throw new Error("SECRET_ACCESS_TOKEN_MISSING");
+    }
+    const accessToken = jwt.sign(
+        payload,
+        ACCESS_TOKEN,
+        { expiresIn: "1m" }
+    );
+    return accessToken;
 }
 
 //! FORGOT PASSWORD

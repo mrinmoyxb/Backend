@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true,
-        minLength: [3, 'last name must be at least 3 characters long'],
+        minLength: [3, "last name must be at least 3 characters long"],
         maxLength: [50, "last name cannot exceed 50 characters"]
     },
     email: {
@@ -23,9 +23,7 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true,
-        minLength: [8, 'password must be at least 8 characters long'],
-        maxLength: [12, "password cannot exceed 12 characters"]
+        required: true
     },
     refreshToken: {
         type: String,

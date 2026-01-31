@@ -5,7 +5,6 @@ import { Types } from "mongoose";
 
 
 export async function serviceAuthRegister(userfname: string, userlname: string, useremail: string, userpassword: string) {
-
     const existingUser = await userModel.findOne({ email: useremail });
     if (existingUser) {
         throw Error("EMAIL_ALREADY_EXISTS");
@@ -16,7 +15,7 @@ export async function serviceAuthRegister(userfname: string, userlname: string, 
     }
 
     const hashedPassword = await utilHashPassword(userpassword);
-
+    
     const newUser = await userModel.create({
         fname: userfname,
         lname: userlname,
@@ -32,7 +31,7 @@ export async function serviceAuthRegister(userfname: string, userlname: string, 
 export async function serviceAuthLogin(useremail: string, userpassword: string) {
     const existingUser = await userModel.findOne({ email: useremail });
     if (!existingUser) {
-        throw new Error("INVALID_EMAIL");
+        throw new Error("EMAIL_NOT_REGISTERED");
     }
 
     const hashedPassword = await utilCheckHashPassword(userpassword, existingUser.password);
@@ -50,11 +49,7 @@ export async function serviceAuthLogin(useremail: string, userpassword: string) 
 
     return {
         accessToken, 
-        refreshToken,
-        user: {
-            id: existingUser._id,
-            email: existingUser.email
-        }
+        refreshToken
     }
 }
 
