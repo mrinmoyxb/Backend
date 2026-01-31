@@ -2,7 +2,7 @@ import "dotenv/config"
 import express from "express";
 import cookieParser from "cookie-parser";
 import authRouter from "./modules/auth/auth.routes.ts";
-import { utilConnectMongoDB } from "./utils/connectDBUtil.ts";
+import { utilConnectMongoDB } from "./utils/connectDB.util.ts";
 import { middlewareAuthenticateAccessToken } from "./modules/auth/auth.middleware.ts";
 
 const app = express();

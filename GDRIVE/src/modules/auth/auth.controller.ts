@@ -1,5 +1,5 @@
 import { type Request, type Response } from "express";
-import { utilCheckValidName, utilCheckLengthOfEachParameter, utilGetNewAccessToken, utilVerifyResetOTPToken } from '../../utils/authUtil.ts';
+import { utilCheckValidName, utilCheckLengthOfEachParameter, utilGetNewAccessToken, utilVerifyResetOTPToken } from '../../utils/auth.util.ts';
 import validator from "validator";
 import { serviceAuthForgotPassword, serviceAuthLogin, serviceAuthLogout, serviceAuthRegister, serviceAuthVerifyOTP, serviceResetPassword } from "./auth.service.ts";
 

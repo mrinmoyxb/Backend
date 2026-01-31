@@ -30,12 +30,7 @@ gdrive-backend/
 ├── src/
 │   ├── app.js                 # Express app setup
 │   ├── server.js              # Server bootstrap
-│
-│   ├── config/
-│   │   ├── db.js              # DB connection (Postgres/Mongo)
-│   │   ├── env.js             # Environment config
-│   │   └── s3.js              # S3 / cloud storage config
-│
+│.  |
 │   ├── modules/
 │   │
 │   │   ├── auth/
