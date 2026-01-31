@@ -161,7 +161,7 @@ export async function utilHashOTP(otp: string){
     return hashedOTP;
 }
 
-export async function utilSendOTPMail(to: string, otp: string){
+export async function utilSendOTPMail(to: string, otp: string): Promise<boolean>{
     const transporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
         port: 465,
@@ -172,13 +172,51 @@ export async function utilSendOTPMail(to: string, otp: string){
         }
     });
 
-    await transporter.sendMail({
-        from: `"Orbit" <${process.env.SERVICE_EMAIL}>`,
+    const check = await transporter.sendMail({
+        from: `"OrbitDrive" <${process.env.SERVICE_EMAIL}>`,
         to,
-        subject: "Password Reset OTP From Orbit",
+        subject: "Password Reset OTP From Orbit Drive",
         text: `Your OTP is ${otp}`,
         html: `<h1>Your OTP is ${otp}</h1>`
     })
+    return check ? true : false
+}
+
+export function utilResetOTPToken(id: string, email: string){
+    const payload = {
+        userid: id,
+        useremail: email
+    }
+
+    const OTP_RESET_TOKEN = process.env.OTP_RESET_TOKEN
+
+    if(!OTP_RESET_TOKEN){
+        throw new Error("SECRET_OTP_RESET_TOKEN_MISSING");
+    }
+
+    const resetToken = jwt.sign(
+        payload,
+        OTP_RESET_TOKEN,
+        {expiresIn: "10m"}
+    )
+
+    return resetToken;
+}
+
+export function utilVerifyResetOTPToken(token: string){
+
+    const OTP_RESET_TOKEN = process.env.OTP_RESET_TOKEN
+
+    if(!OTP_RESET_TOKEN){
+        throw new Error("SECRET_OTP_RESET_TOKEN_MISSING");
+    }
+
+    const resetToken = jwt.verify(token, OTP_RESET_TOKEN);
+    if(!resetToken){
+        throw new Error("EXPIRED_TOKEN");
+    }
+    console.log("xxx");
+    return resetToken;
 }
 
 export async function utilVerifyHashOTP(otp: string){

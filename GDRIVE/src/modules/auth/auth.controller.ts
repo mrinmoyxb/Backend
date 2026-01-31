@@ -1,5 +1,5 @@
 import { type Request, type Response } from "express";
-import { utilCheckValidName, utilCheckLengthOfEachParameter, utilGetNewAccessToken } from '../../utils/authUtil.ts';
+import { utilCheckValidName, utilCheckLengthOfEachParameter, utilGetNewAccessToken, utilVerifyResetOTPToken } from '../../utils/authUtil.ts';
 import validator from "validator";
 import { serviceAuthForgotPassword, serviceAuthLogin, serviceAuthLogout, serviceAuthRegister, serviceAuthVerifyOTP, serviceResetPassword } from "./auth.service.ts";
 
@@ -143,38 +143,41 @@ export async function setLogoutUser(req: Request, res: Response){
 
 export async function setForgotPassword(req: ForgotPasswordRequest, res: Response){
     try{
-        const { email } = req.body.email;
+        const { email } = req.body;
+
         if(!email){
             return res.status(400).json({msg: "provide your registered email"});
         }
 
         const normalizedMail = email.toLowerCase();
+        await serviceAuthForgotPassword(normalizedMail);
 
-        const userId = await serviceAuthForgotPassword(normalizedMail);
-        req.userId = userId.toString();
         return res.status(200).json({msg: "OTP sent"});
 
     }catch(error: any){
         if(error==="INVALID_EMAIL"){
             return res.status(404).json({msg: "email not found"});
         }
+        if(error==="SEND_EMAIL_FAILED"){
+            return res.status(401).json({msg: "couldn't send mail to the user"});
+        }
+        if(error==="UPDATE_OTP_FAILED"){
+            return res.status(401).json({msg: "couldn't update OTP"});
+        }
         return res.status(500).json({msg: "internal server error"});
     }
 }
 
 export async function setVerifyOTP(req: ForgotPasswordRequest, res: Response){
-    try{
-        const { otp } = req.body.otp;
+    try{ 
+        const { email, otp } = req.body;
 
-        if(!otp){
-            return res.status(400).json({msg: "invalid OTP"});
+        if(!otp || !email){
+            return res.status(400).json({msg: "invalid credentials"});
         }
 
-        if(!req.userId){
-            return res.status(404).json({msg: "userid not found"});
-        }
-
-        await serviceAuthVerifyOTP(otp, req.userId);
+        const resetToken =  await serviceAuthVerifyOTP(otp, email);
+        return res.status(200).json({msg: "OTP verified successfully", resetToken: resetToken});
 
     }catch(error: any){
         if(error==="USER_NOT_FOUND"){
@@ -183,27 +186,31 @@ export async function setVerifyOTP(req: ForgotPasswordRequest, res: Response){
         if(error==="OTP_MISMATCH"){
             return res.status(400).json({msg: "otp mismatch"});
         }
+        if(error.message === "SECRET_OTP_RESET_TOKEN_MISSING"){
+            return res.status(401).json({msg: "secret otp token missing"});
+        }
         return res.status(500).json({msg: "internal server error"});
     }
 }
 
 export async function setNewPassword(req: ForgotPasswordRequest, res: Response){
     try{
-
-        const { newPassword, confirmPassword } = req.body;
-        if(!newPassword || !confirmPassword){
+        const { resetToken, newPassword, confirmPassword } = req.body;
+        console.log("token: ", resetToken);
+        if(!newPassword || !confirmPassword || !resetToken){
             return res.status(400).json({msg: "all fields are required"});
         }
-
+        
         if(newPassword!==confirmPassword){
             return res.status(400).json({msg: "password mismatch"});
         }
-
-        if(!req.userId){
-            return res.status(404).json({msg: "userid not found"});
+        
+        const verifiedToken = utilVerifyResetOTPToken(resetToken) as any;
+        if(!verifiedToken){
+            return res.status(401).json({msg: "invalid reset otp token"});
         }
-
-        await serviceResetPassword(req.userId, newPassword);
+ 
+        await serviceResetPassword(verifiedToken.useremail, newPassword);
         return res.status(200).json({msg: "password reset successfull"});
 
     }catch(error: any){
@@ -212,6 +219,9 @@ export async function setNewPassword(req: ForgotPasswordRequest, res: Response){
         }
         if(error==="USER_NOT_FOUND"){
             return res.status(404).json({msg: "userid not found"});
+        }
+        if(error==="EXPIRED_TOKEN"){
+            return res.status(404).json({msg: "expired token"});
         }
         return res.status(500).json({msg: "internal server error"});
     }

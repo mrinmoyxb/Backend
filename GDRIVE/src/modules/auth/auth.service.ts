@@ -1,5 +1,5 @@
 import { userModel } from "../../models/user.model.ts"
-import { utilHashPassword, utilCheckHashPassword, utilGetAccessToken, utilGetRefreshToken, utilHashRefreshToken, utilVerifyRefreshToken, utilGenerateOTP, utilHashOTP, utilSendOTPMail } from "../../utils/authUtil.ts";
+import { utilHashPassword, utilCheckHashPassword, utilGetAccessToken, utilGetRefreshToken, utilHashRefreshToken, utilVerifyRefreshToken, utilGenerateOTP, utilHashOTP, utilSendOTPMail, utilResetOTPToken } from "../../utils/authUtil.ts";
 import bcrypt from "bcrypt";
 import { Types } from "mongoose";
 
@@ -79,46 +79,54 @@ export async function serviceAuthForgotPassword(useremail: string): Promise<Type
     if(!isUser){
         throw new Error("INVALID_EMAIL");
     }
-
+    
     const otp = utilGenerateOTP(4);
     const hashedOTP = await utilHashOTP(otp);
 
-    await userModel.findByIdAndUpdate(isUser._id,
+    const updateOTP = await userModel.findByIdAndUpdate(isUser._id,
         {$set: {
             resetOTP: hashedOTP
         }}
     )
+    if(!updateOTP){
+        throw new Error("UPDATE_OTP_FAILED");
+    }
 
-    await utilSendOTPMail(useremail, otp);
+    const sendMail = await utilSendOTPMail(useremail, otp);
+    if(!sendMail){
+        throw new Error("SEND_EMAIL_FAILED");
+    }
     return isUser._id;
 }
 
-export async function serviceAuthVerifyOTP(otp: string, userId: string){
-    const isUser = await userModel.findById(userId);
+export async function serviceAuthVerifyOTP(otp: string, email: string){
+
+    const isUser = await userModel.findOne({email: email});
     if(!isUser){
         throw new Error("USER_NOT_FOUND");
     }
 
     const hashedOTP = await bcrypt.compare(otp, isUser.resetOTP as string);
-    if(hashedOTP){
+    if(!hashedOTP){
         throw new Error("OTP_MISMATCH");
     }
+
+    const resetToken = utilResetOTPToken(isUser._id.toString(), isUser.email);
+    return resetToken;
 }
 
-export async function serviceResetPassword(userId: string, newPassword: string){
+export async function serviceResetPassword(email: string, newPassword: string){
     
-    if (!(newPassword.length >= 8 && newPassword.length <= 12)) {
+    if (newPassword.length < 8 || newPassword.length > 12) {
         throw new Error("UNSUPPORTED_LENGTH");
     }
-    
-    const isUser = await userModel.findById(userId);
-    if(!isUser){
+    const isUser = await userModel.findOne({email: email});
+    if(!isUser){ 
         throw new Error("USER_NOT_FOUND");
     }
 
-    await userModel.updateOne(isUser._id,
-        {$set: {
-            password: newPassword
-        }}
-    )
+    const hashedPassword = await utilHashPassword(newPassword);
+    isUser.password = hashedPassword;
+    isUser.resetOTP = null;
+    await isUser.save();
 }
