@@ -62,7 +62,7 @@ export function utilGetAccessToken(email: string, _id: Types.ObjectId){
     const accessToken = jwt.sign(
         payload,
         ACCESS_TOKEN,
-        {expiresIn: "1m"}
+        {expiresIn: "60m"}
     );
     return accessToken;
 }
@@ -215,7 +215,7 @@ export function utilVerifyResetOTPToken(token: string){
     if(!resetToken){
         throw new Error("EXPIRED_TOKEN");
     }
-    console.log("xxx");
+    
     return resetToken;
 }
 

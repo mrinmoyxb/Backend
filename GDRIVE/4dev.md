@@ -24,7 +24,7 @@
 
 ---------------------------------------------------------------------------------------------------------------------------------------
 
-### File Structure ###
+### Folder Structure ###
 gdrive-backend/
 │
 ├── src/
@@ -100,3 +100,68 @@ gdrive-backend/
 ├── package.json
 ├── README.md
 └── docker-compose.yml
+
+
+### Files Metadata:
+import mongoose from "mongoose";
+
+const fileSchema = new mongoose.Schema({
+    owner: { -> who created the file
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "user",
+        required: true,
+        index: true
+    },
+    name: { -> current name of the file
+        type: String,
+        required: true
+    },
+    originalName: { -> name of the file at the time of upload
+        type: String,
+        required: true
+    },
+    mimeType: { -> file type
+        type: String,
+        required: true
+    },
+    size: { -> size in bytes
+        type: Number,
+        required: true
+    },
+    s3Key: { -> S3 key, exact path of the object in S3
+        type: String,
+        required: true,
+        unique: true
+    },
+    bucket: { -> name of the bucket
+        type: String,
+        required: true
+    },
+    isFolder: {
+        type: Boolean,
+        default: false
+    },
+    parent: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "file",
+        default: null
+    },
+    visibility: {
+        type: String,
+        enum: ["private", "shared"],
+        default: "private"
+    },
+    checksum: {
+        type: String
+    },
+    starred: {
+        type: Boolean,
+        default: false
+    },
+    trashed: {
+        type: Boolean,
+        default: false
+    }
+}, {timestamps: true});
+
+export const fileModel = mongoose.model("file", fileSchema);

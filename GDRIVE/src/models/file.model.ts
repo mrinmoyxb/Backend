@@ -25,12 +25,13 @@ const fileSchema = new mongoose.Schema({
     },
     s3Key: {
         type: String,
+        unique: true,
         required: true,
-        unique: true
     },
     bucket: {
         type: String,
-        required: true
+        default: "orbitdrive-bucket",
+        required: true,
     },
     isFolder: {
         type: Boolean,
@@ -43,11 +44,8 @@ const fileSchema = new mongoose.Schema({
     },
     visibility: {
         type: String,
-        enum: ["private", "shared"],
-        default: "private"
-    },
-    checksum: {
-        type: String
+        enum: ["PRIVATE", "SHARED"],
+        default: "PRIVATE"
     },
     starred: {
         type: Boolean,
@@ -56,6 +54,11 @@ const fileSchema = new mongoose.Schema({
     trashed: {
         type: Boolean,
         default: false
+    },
+    status: {
+        type: String,
+        enum: ["PENDING", "UPLOADED", "FAILED"],
+        default: "PENDING"
     }
 }, {timestamps: true});
 
