@@ -56,3 +56,26 @@ export async function setFileUploadConfirmation(req: Request, res: Response){
 
     return res.status(200).json({ msg: "upload confirmed" });
 }
+
+export async function setFileStarred(req: Request, res: Response){
+    try {
+        const userId = req.userId;
+        const fileId = req.params.id;
+
+        const isFile = await fileModel.findOne({ owner: userId, _id: fileId });
+        if (!isFile) {
+            return res.status(404).json({ msg: "file/folder not found" });
+        }
+
+        if(isFile.trashed){
+            return res.status(400).json({msg: "cannot star/unstar a trashed file"});
+        }
+
+        isFile.starred = !isFile.starred;
+        await isFile.save();
+
+        return res.status(200).json({msg: "success", starred: isFile.starred});
+    } catch (error) {
+        return res.status(500).json({ msg: "internal server error" });
+    }
+}
