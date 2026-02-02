@@ -13,25 +13,36 @@ const fileSchema = new mongoose.Schema({
     },
     originalName: {
         type: String,
-        required: true
+        required: function(this: any): boolean{
+            return !this.isFolder
+        }
     },
     mimeType: {
         type: String,
-        required: true
+        required: function(this: any): boolean{
+            return !this.isFolder
+        }
     },
     size: {
         type: Number,
-        required: true
+        required: function(this: any): boolean{
+            return !this.isFolder
+        }
     },
     s3Key: {
         type: String,
         unique: true,
-        required: true,
+        sparse: true,
+        required: function(this: any): boolean{
+            return !this.isFolder
+        }
     },
     bucket: {
         type: String,
         default: "orbitdrive-bucket",
-        required: true,
+        required: function(this: any): boolean{
+            return !this.isFolder
+        }
     },
     isFolder: {
         type: Boolean,
@@ -55,10 +66,17 @@ const fileSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    trashedAt: {
+        type: Date,
+        default: null
+    },
     status: {
         type: String,
         enum: ["PENDING", "UPLOADED", "FAILED"],
-        default: "PENDING"
+        default: "PENDING",
+        required: function(this: any): boolean{
+            return !this.isFolder
+        }
     }
 }, {timestamps: true});
 

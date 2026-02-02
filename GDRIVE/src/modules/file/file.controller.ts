@@ -79,3 +79,73 @@ export async function setFileStarred(req: Request, res: Response){
         return res.status(500).json({ msg: "internal server error" });
     }
 }
+
+export async function setFileTrashed(req: Request, res: Response){
+    try{
+        const userId = req.userId;
+        const fileId = req.params.id;
+
+        const isFile = await fileModel.findOne({owner: userId, _id: fileId});
+        if(!isFile){
+            return res.status(404).json({ msg: "file/folder not found" });
+        }
+
+        if(isFile.trashed){
+            return res.status(200).json({msg: "file already in trash"});
+        }
+
+        isFile.trashed = true;
+        isFile.trashedAt = new Date();
+        await isFile.save();
+
+        return res.status(200).json({msg: "file moved to bin successfully"});
+
+    }catch(error){
+        return res.status(500).json({ msg: "internal server error" });
+    }
+}
+
+export async function setCreateNewFolder(req: Request, res: Response){
+    try{
+        const userId = req.userId;
+        const { folderName, parentId } = req.body;
+
+        const normalizedParentId = parentId && parentId !== "null" ? parentId : null;
+
+        if (normalizedParentId) {
+            const parentFolder = await fileModel.findOne({
+                _id: normalizedParentId,
+                owner: userId,
+                isFolder: true,
+                trashed: false
+            });
+
+            if (!parentFolder) {
+                return res.status(400).json({ msg: "invalid parent folder" });
+            }
+        }
+
+        const existingFolder = await fileModel.findOne({
+            owner: userId,
+            isFolder: true,
+            name: folderName,
+            parent: normalizedParentId,
+            trashed: false
+        });
+
+        if(existingFolder){
+            return res.status(400).json({msg: "folder already exists"});
+        }
+        
+        await fileModel.create({
+            owner: userId,
+            name: folderName,
+            isFolder: true,
+            parent: normalizedParentId
+        });
+        return res.status(200).json({msg: "new folder created"});
+
+    }catch(error){
+        return res.status(500).json({ msg: "internal server error" });
+    }
+}
