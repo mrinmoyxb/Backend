@@ -2,6 +2,7 @@ import { type Request, type Response } from "express";
 import { fileModel } from "../../models/file.model.ts";
 import { utilGeneratePresignedURL } from "../../utils/awsS3Presigned.util.ts";
 import { v4 as uuidv4 } from 'uuid';
+import { Types } from "mongoose";
 
 export async function setFileUploadToS3(req: Request, res: Response){
     const userId = req.userId;
@@ -80,6 +81,32 @@ export async function setFileStarred(req: Request, res: Response){
     }
 }
 
+export async function setRenameItem(req: Request, res: Response){
+    try{
+        const userId = req.userId;
+        const itemId = req.params.id;
+        const newName = req.body.name;
+
+        if (!newName || newName.trim().length === 0) {
+            return res.status(400).json({ msg: "Invalid name" });
+        }
+
+        const updatedItem = await fileModel.findOneAndUpdate(
+            {_id: itemId, owner: userId},
+            {name: newName.trim()},
+            {new: true}
+        );
+        
+        if (!updatedItem) {
+            return res.status(404).json({ msg: "file/folder not found" });
+        }
+
+        return res.status(200).json({msg: "success"});
+    }catch(error){
+        return res.status(500).json({ msg: "internal server error" });
+    }
+}
+
 export async function setFileTrashed(req: Request, res: Response){
     try{
         const userId = req.userId;
@@ -101,6 +128,49 @@ export async function setFileTrashed(req: Request, res: Response){
         return res.status(200).json({msg: "file moved to bin successfully"});
 
     }catch(error){
+        return res.status(500).json({ msg: "internal server error" });
+    }
+}
+
+async function restoreRecursively(folderId: Types.ObjectId) {
+    const children = await fileModel.find({ parent: folderId });
+
+    for (const child of children) {
+        await fileModel.updateOne(
+            { _id: child._id },
+            { $set: { trashed: false, trashedAt: null } }
+        );
+
+        if (child.isFolder) {
+            await restoreRecursively(child._id);
+        }
+    }
+}
+
+export async function setItemRestored(req: Request, res: Response) {
+    try {
+        const userId = req.userId;
+        const itemId = req.params.id;
+
+        const isItem = await fileModel.findOne({ owner: userId, _id: itemId, trashed: true });
+        if (!isItem) {
+            return res.status(404).json({ msg: "file/folder not found" });
+        }
+
+        if (isItem && isItem.isFolder === true) {
+            await restoreRecursively(isItem._id);
+        }
+
+        await fileModel.updateOne(
+            { _id: isItem._id },
+            { $set: { trashed: false, trashedAt: null } });
+
+        return res.status(200).json({
+            msg: isItem.isFolder
+                ? "folder restored successfully"
+                : "file restored successfully"
+        });
+    } catch (error) {
         return res.status(500).json({ msg: "internal server error" });
     }
 }
