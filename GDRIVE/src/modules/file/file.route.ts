@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { setCreateNewFolder, setFileStarred, setFileTrashed, setFileUploadConfirmation, setFileUploadToS3, setRenameItem } from "./file.controller.ts";
+import { setCreateNewFolder, setFileDownload, setFileStarred, setFileTrashed, setFileUploadConfirmation, setFileUploadToS3, setRenameItem } from "./file.controller.ts";
 import { middlewareAuthenticateAccessToken } from "../auth/auth.middleware.ts";
 
 const router = Router();
@@ -9,9 +9,12 @@ router.post("/upload-status", middlewareAuthenticateAccessToken, setFileUploadCo
 
 router.patch("/starred/:id", middlewareAuthenticateAccessToken, setFileStarred);
 router.patch("/trashed/:id", middlewareAuthenticateAccessToken, setFileTrashed);
-router.patch("/restore/:id");
+// router.patch("/restore/:id");
 
 router.post("/rename-item/:id", middlewareAuthenticateAccessToken, setRenameItem);
 router.post("/create-folder", middlewareAuthenticateAccessToken, setCreateNewFolder);
+
+
+router.get("/download/:id", middlewareAuthenticateAccessToken, setFileDownload);
 
 export default router;

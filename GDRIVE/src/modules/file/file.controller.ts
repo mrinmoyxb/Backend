@@ -1,8 +1,11 @@
 import { type Request, type Response } from "express";
 import { fileModel } from "../../models/file.model.ts";
-import { utilGeneratePresignedURL } from "../../utils/awsS3Presigned.util.ts";
+import { utilPutGeneratePresignedURL } from "../../utils/awsS3Presigned.util.ts";
 import { v4 as uuidv4 } from 'uuid';
 import { Types } from "mongoose";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { awsS3Client } from "../../utils/awsS3Client.util.ts";
 
 export async function setFileUploadToS3(req: Request, res: Response){
     const userId = req.userId;
@@ -19,7 +22,7 @@ export async function setFileUploadToS3(req: Request, res: Response){
 
     const uid = uuidv4();
     const s3Key = `users/${userId}/${uid}-${fileName}`;
-    const uploadURL = await utilGeneratePresignedURL(s3Key, fileType) as any;
+    const uploadURL = await utilPutGeneratePresignedURL(s3Key, fileType) as any;
 
     const fileDoc = await fileModel.create({
         owner: userId,
@@ -217,5 +220,39 @@ export async function setCreateNewFolder(req: Request, res: Response){
 
     }catch(error){
         return res.status(500).json({ msg: "internal server error" });
+    }
+}
+
+export async function setFileDownload(req: Request, res: Response){
+    try{
+        const userId = req.userId;
+        const fileId = req.params.id;
+
+        const file = await fileModel.findOne({
+            _id: fileId,
+            owner: userId,
+            trashed: false
+        });
+
+        if (!file) {
+            return res.status(404).json({ msg: "File not found" });
+        }
+        
+        const command = new GetObjectCommand({
+            Bucket: process.env.S3_BUCKET_NAME,
+            Key: file.s3Key as string,
+            ResponseContentDisposition: `attachment; filename="${file.name}"`
+        })
+
+        const signedURL = await getSignedUrl(awsS3Client, command, {
+            expiresIn: 600
+        });
+
+        return res.status(200).json({
+            downloadUrl: signedURL
+        });
+        
+    }catch(error){
+        return res.status(500).json({ msg: "Download failed" });
     }
 }
