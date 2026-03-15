@@ -4,10 +4,7 @@ import { MongoClient } from "mongodb";
 const app = express();
 const PORT = 5050;
 
-app.use(express.urlencoded({ extended: false }));
-app.use(express.static("public"));
-
-const MONGO_URL = "mongodb://admin:qwerty@localhost:27017/?authSource=admin";
+const MONGO_URL = "mongodb://admin:qwerty@localhost:27018/";
 const client = new MongoClient(MONGO_URL);
 
 let db;
@@ -17,8 +14,11 @@ async function connectDB() {
     console.log("Connected successfully to MongoDB");
     db = client.db("dockerdb");
 }
-
 connectDB();
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(express.static("public"));
 
 app.get("/getusers", async (req, res) => {
     const data = await db.collection("users").find({}).toArray();
@@ -26,11 +26,21 @@ app.get("/getusers", async (req, res) => {
 });
 
 app.post("/adduser", async (req, res) => {
-    const userObj = req.body;
+    try {
+        console.log(req.body);
 
-    await db.collection("users").insertOne(userObj);
+        const userObj = req.body;
 
-    res.status(201).json({ msg: "Inserted successfully" });
+        const result = await db.collection("users").insertOne(userObj);
+
+        console.log(result);
+
+        res.status(201).json({ msg: "Inserted successfully" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error inserting user");
+    }
 });
 
 app.listen(PORT, () => {
