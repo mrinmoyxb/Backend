@@ -1,0 +1,20 @@
+{
+  "name": "pgresdrizzle",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/pg": "^8.18.0",
+    "drizzle-kit": "^0.31.9"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.1",
+    "fastify": "^5.8.2",
+    "pg": "^8.20.0",
+    "postgres": "^3.4.8"
+  }
+}
